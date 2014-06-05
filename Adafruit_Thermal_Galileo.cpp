@@ -11,13 +11,8 @@
   MIT license, all text above must be included in any redistribution.
  *************************************************************************/
 
-#if ARDUINO >= 100
- #include "Arduino.h"
-#else
- #include "WProgram.h"
- #include "WConstants.h"
-#endif
-#include "Adafruit_Thermal.h"
+#include "Arduino.h"
+#include "Adafruit_Thermal_Galileo.h"
 
 // Though most of these printers are factory configured for 19200 baud
 // operation, a few rare specimens instead work at 9600.  If so, change
@@ -42,12 +37,12 @@
 // while the printer physically completes the task.
 
 // This method sets the estimated completion time for a just-issued task.
-void Adafruit_Thermal::timeoutSet(unsigned long x) {
+void Adafruit_Thermal_Galileo::timeoutSet(unsigned long x) {
   resumeTime = micros() + x;
 }
 
 // This function waits (if necessary) for the prior task to complete.
-void Adafruit_Thermal::timeoutWait() {
+void Adafruit_Thermal_Galileo::timeoutWait() {
   while((long)(micros() - resumeTime) < 0L); // Rollover-proof
 }
 
@@ -62,34 +57,32 @@ void Adafruit_Thermal::timeoutWait() {
 // but as stated above your reality may be influenced by many factors.
 // This lets you tweak the timing to avoid excessive delays and/or
 // overrunning the printer buffer.
-void Adafruit_Thermal::setTimes(unsigned long p, unsigned long f) {
+void Adafruit_Thermal_Galileo::setTimes(unsigned long p, unsigned long f) {
   dotPrintTime = p;
   dotFeedTime  = f;
 }
 
 // Constructor
-Adafruit_Thermal::Adafruit_Thermal(int RX_Pin, int TX_Pin) {
-  _RX_Pin = RX_Pin;
-  _TX_Pin = TX_Pin;
-}
+// Adafruit_Thermal_Galileo::Adafruit_Thermal_Galileo() {
+// }
 
 // The next four helper methods are used when issuing configuration
 // commands, printing bitmaps or barcodes, etc.  Not when printing text.
 
-void Adafruit_Thermal::writeBytes(uint8_t a) {
+void Adafruit_Thermal_Galileo::writeBytes(uint8_t a) {
   timeoutWait();
   PRINTER_PRINT(a);
   timeoutSet(BYTE_TIME);
 }
 
-void Adafruit_Thermal::writeBytes(uint8_t a, uint8_t b) {
+void Adafruit_Thermal_Galileo::writeBytes(uint8_t a, uint8_t b) {
   timeoutWait();
   PRINTER_PRINT(a);
   PRINTER_PRINT(b);
   timeoutSet(2 * BYTE_TIME);
 }
 
-void Adafruit_Thermal::writeBytes(uint8_t a, uint8_t b, uint8_t c) {
+void Adafruit_Thermal_Galileo::writeBytes(uint8_t a, uint8_t b, uint8_t c) {
   timeoutWait();
   PRINTER_PRINT(a);
   PRINTER_PRINT(b);
@@ -97,7 +90,7 @@ void Adafruit_Thermal::writeBytes(uint8_t a, uint8_t b, uint8_t c) {
   timeoutSet(3 * BYTE_TIME);
 }
 
-void Adafruit_Thermal::writeBytes(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
+void Adafruit_Thermal_Galileo::writeBytes(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
   timeoutWait();
   PRINTER_PRINT(a);
   PRINTER_PRINT(b);
@@ -109,9 +102,9 @@ void Adafruit_Thermal::writeBytes(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
 // The underlying method for all high-level printing (e.g. println()).
 // The inherited Print class handles the rest!
 #if ARDUINO >= 100
-size_t Adafruit_Thermal::write(uint8_t c) {
+size_t Adafruit_Thermal_Galileo::write(uint8_t c) {
 #else
-void Adafruit_Thermal::write(uint8_t c) {
+void Adafruit_Thermal_Galileo::write(uint8_t c) {
 #endif
 
   if(c != 0x13) { // Strip carriage returns
@@ -136,9 +129,8 @@ void Adafruit_Thermal::write(uint8_t c) {
 #endif
 }
 
-void Adafruit_Thermal::begin(int heatTime) {
-  _printer = new SERIAL_IMPL(_RX_Pin, _TX_Pin);
-  _printer->begin(BAUDRATE);
+void Adafruit_Thermal_Galileo::begin(int heatTime) {
+  Serial1.begin(BAUDRATE);
 
   // The printer can't start receiving data immediately upon power up --
   // it needs a moment to cold boot and initialize.  Allow at least 1/2
@@ -187,7 +179,7 @@ void Adafruit_Thermal::begin(int heatTime) {
 }
 
 // Reset printer to default state.
-void Adafruit_Thermal::reset() {
+void Adafruit_Thermal_Galileo::reset() {
   prevByte      = '\n'; // Treat as if prior line is blank
   column        = 0;
   maxColumn     = 32;
@@ -198,7 +190,7 @@ void Adafruit_Thermal::reset() {
 }
 
 // Reset text formatting parameters.
-void Adafruit_Thermal::setDefault(){
+void Adafruit_Thermal_Galileo::setDefault(){
   online();
   justify('L');
   inverseOff();
@@ -210,25 +202,25 @@ void Adafruit_Thermal::setDefault(){
   setSize('s');
 }
 
-void Adafruit_Thermal::test(){
+void Adafruit_Thermal_Galileo::test(){
   println("Hello World!");
   feed(2);
 }
 
-void Adafruit_Thermal::testPage() {
+void Adafruit_Thermal_Galileo::testPage() {
   writeBytes(18, 84);
   timeoutSet(
     dotPrintTime * 24 * 26 +      // 26 lines w/text (ea. 24 dots high)
     dotFeedTime * (8 * 26 + 32)); // 26 text lines (feed 8 dots) + blank line
 }
 
-void Adafruit_Thermal::setBarcodeHeight(int val) { // Default is 50
+void Adafruit_Thermal_Galileo::setBarcodeHeight(int val) { // Default is 50
   if(val < 1) val = 1;
   barcodeHeight = val;
   writeBytes(29, 104, val);
 }
 
-void Adafruit_Thermal::printBarcode(char * text, uint8_t type) {
+void Adafruit_Thermal_Galileo::printBarcode(char * text, uint8_t type) {
   int  i = 0;
   byte c;
 
@@ -252,77 +244,77 @@ void Adafruit_Thermal::printBarcode(char * text, uint8_t type) {
 #define DOUBLE_WIDTH_MASK  (1 << 5)
 #define STRIKE_MASK        (1 << 6)
 
-void Adafruit_Thermal::setPrintMode(uint8_t mask) {
+void Adafruit_Thermal_Galileo::setPrintMode(uint8_t mask) {
   printMode |= mask;
   writePrintMode();
   charHeight = (printMode & DOUBLE_HEIGHT_MASK) ? 48 : 24;
   maxColumn  = (printMode & DOUBLE_WIDTH_MASK ) ? 16 : 32;
 }
-void Adafruit_Thermal::unsetPrintMode(uint8_t mask) {
+void Adafruit_Thermal_Galileo::unsetPrintMode(uint8_t mask) {
   printMode &= ~mask;
   writePrintMode();
   charHeight = (printMode & DOUBLE_HEIGHT_MASK) ? 48 : 24;
   maxColumn  = (printMode & DOUBLE_WIDTH_MASK ) ? 16 : 32;
 }
 
-void Adafruit_Thermal::writePrintMode() {
+void Adafruit_Thermal_Galileo::writePrintMode() {
   writeBytes(27, 33, printMode);
 }
 
-void Adafruit_Thermal::normal() {
+void Adafruit_Thermal_Galileo::normal() {
   printMode = 0;
   writePrintMode();
 }
 
-void Adafruit_Thermal::inverseOn(){
+void Adafruit_Thermal_Galileo::inverseOn(){
   setPrintMode(INVERSE_MASK);
 }
 
-void Adafruit_Thermal::inverseOff(){
+void Adafruit_Thermal_Galileo::inverseOff(){
   unsetPrintMode(INVERSE_MASK);
 }
 
-void Adafruit_Thermal::upsideDownOn(){
+void Adafruit_Thermal_Galileo::upsideDownOn(){
   setPrintMode(UPDOWN_MASK);
 }
 
-void Adafruit_Thermal::upsideDownOff(){
+void Adafruit_Thermal_Galileo::upsideDownOff(){
   unsetPrintMode(UPDOWN_MASK);
 }
 
-void Adafruit_Thermal::doubleHeightOn(){
+void Adafruit_Thermal_Galileo::doubleHeightOn(){
   setPrintMode(DOUBLE_HEIGHT_MASK);
 }
 
-void Adafruit_Thermal::doubleHeightOff(){
+void Adafruit_Thermal_Galileo::doubleHeightOff(){
   unsetPrintMode(DOUBLE_HEIGHT_MASK);
 }
 
-void Adafruit_Thermal::doubleWidthOn(){
+void Adafruit_Thermal_Galileo::doubleWidthOn(){
   setPrintMode(DOUBLE_WIDTH_MASK);
 }
 
-void Adafruit_Thermal::doubleWidthOff(){
+void Adafruit_Thermal_Galileo::doubleWidthOff(){
   unsetPrintMode(DOUBLE_WIDTH_MASK);
 }
 
-void Adafruit_Thermal::strikeOn(){
+void Adafruit_Thermal_Galileo::strikeOn(){
   setPrintMode(STRIKE_MASK);
 }
 
-void Adafruit_Thermal::strikeOff(){
+void Adafruit_Thermal_Galileo::strikeOff(){
   unsetPrintMode(STRIKE_MASK);
 }
 
-void Adafruit_Thermal::boldOn(){
+void Adafruit_Thermal_Galileo::boldOn(){
   setPrintMode(BOLD_MASK);
 }
 
-void Adafruit_Thermal::boldOff(){
+void Adafruit_Thermal_Galileo::boldOff(){
   unsetPrintMode(BOLD_MASK);
 }
 
-void Adafruit_Thermal::justify(char value){
+void Adafruit_Thermal_Galileo::justify(char value){
   uint8_t pos = 0;
 
   switch(toupper(value)) {
@@ -335,23 +327,23 @@ void Adafruit_Thermal::justify(char value){
 }
 
 // Feeds by the specified number of lines
-void Adafruit_Thermal::feed(uint8_t x){
+void Adafruit_Thermal_Galileo::feed(uint8_t x){
   // The datasheet claims sending bytes 27, 100, <x> will work, but
   // it feeds much more than that.  So it's done manually:
   while(x--) write('\n');
 }
 
 // Feeds by the specified number of individual  pixel rows
-void Adafruit_Thermal::feedRows(uint8_t rows) {
+void Adafruit_Thermal_Galileo::feedRows(uint8_t rows) {
   writeBytes(27, 74, rows);
   timeoutSet(rows * dotFeedTime);
 }
 
-void Adafruit_Thermal::flush() {
+void Adafruit_Thermal_Galileo::flush() {
   writeBytes(12);
 }
 
-void Adafruit_Thermal::setSize(char value){
+void Adafruit_Thermal_Galileo::setSize(char value){
   uint8_t size;
 
   switch(toupper(value)) {
@@ -380,15 +372,15 @@ void Adafruit_Thermal::setSize(char value){
 // 0 - no underline
 // 1 - normal underline
 // 2 - thick underline
-void Adafruit_Thermal::underlineOn(uint8_t weight) {
+void Adafruit_Thermal_Galileo::underlineOn(uint8_t weight) {
   writeBytes(27, 45, weight);
 }
 
-void Adafruit_Thermal::underlineOff() {
+void Adafruit_Thermal_Galileo::underlineOff() {
   underlineOn(0);
 }
 
-void Adafruit_Thermal::printBitmap(
+void Adafruit_Thermal_Galileo::printBitmap(
  int w, int h, const uint8_t *bitmap, bool fromProgMem) {
   int rowBytes, rowBytesClipped, rowStart, chunkHeight, x, y, i;
 
@@ -404,7 +396,8 @@ void Adafruit_Thermal::printBitmap(
 
     for(y=0; y < chunkHeight; y++) {
       for(x=0; x < rowBytesClipped; x++, i++) {
-        PRINTER_PRINT(fromProgMem ? pgm_read_byte(bitmap + i) : *(bitmap+i));
+        // PRINTER_PRINT(fromProgMem ? pgm_read_byte(bitmap + i) : *(bitmap+i));
+        PRINTER_PRINT(*(bitmap+i));
       }
       i += rowBytes - rowBytesClipped;
     }
@@ -413,7 +406,7 @@ void Adafruit_Thermal::printBitmap(
   prevByte = '\n';
 }
 
-void Adafruit_Thermal::printBitmap(int w, int h, Stream *stream) {
+void Adafruit_Thermal_Galileo::printBitmap(int w, int h, Stream *stream) {
   int rowBytes, rowBytesClipped, rowStart, chunkHeight, x, y, i, c;
 
   rowBytes        = (w + 7) / 8; // Round up to next byte boundary
@@ -440,7 +433,7 @@ void Adafruit_Thermal::printBitmap(int w, int h, Stream *stream) {
   prevByte = '\n';
 }
 
-void Adafruit_Thermal::printBitmap(Stream *stream) {
+void Adafruit_Thermal_Galileo::printBitmap(Stream *stream) {
   uint8_t  tmp;
   uint16_t width, height;
 
@@ -455,28 +448,28 @@ void Adafruit_Thermal::printBitmap(Stream *stream) {
 
 // Take the printer offline. Print commands sent after this will be
 // ignored until 'online' is called.
-void Adafruit_Thermal::offline(){
+void Adafruit_Thermal_Galileo::offline(){
   writeBytes(27, 61, 0);
 }
 
 // Take the printer back online. Subsequent print commands will be obeyed.
-void Adafruit_Thermal::online(){
+void Adafruit_Thermal_Galileo::online(){
   writeBytes(27, 61, 1);
 }
 
 // Put the printer into a low-energy state immediately.
-void Adafruit_Thermal::sleep() {
+void Adafruit_Thermal_Galileo::sleep() {
   sleepAfter(1);
 }
 
 // Put the printer into a low-energy state after the given number
 // of seconds.
-void Adafruit_Thermal::sleepAfter(uint8_t seconds) {
+void Adafruit_Thermal_Galileo::sleepAfter(uint8_t seconds) {
   writeBytes(27, 56, seconds);
 }
 
 // Wake the printer from a low-energy state.
-void Adafruit_Thermal::wake() {
+void Adafruit_Thermal_Galileo::wake() {
   // Printer may have been idle for a very long time, during which the
   // micros() counter has rolled over.  To avoid shenanigans, reset the
   // timeout counter before issuing the wake command.
@@ -494,22 +487,22 @@ void Adafruit_Thermal::wake() {
 
 // Tell the soft serial to listen. Needed if you are using multiple
 // SoftSerial interfaces.
-void Adafruit_Thermal::listen() {
-  _printer->listen();
+void Adafruit_Thermal_Galileo::listen() {
+  // Serial1.listen();
 }
 
 // Check the status of the paper using the printers self reporting
 // ability. Doesn't match the datasheet...
 // Returns true for paper, false for no paper.
-bool Adafruit_Thermal::hasPaper() {
+bool Adafruit_Thermal_Galileo::hasPaper() {
   writeBytes(27, 118, 0);
   
   char stat;
   // Some delay while checking.
   // Could probably be done better...
   for (int i = 0; i < 1000; i++) {
-    if (_printer->available()) {
-      stat = _printer->read();
+    if (Serial1.available()) {
+      stat = Serial1.read();
       break;
     }
   }
@@ -527,7 +520,7 @@ bool Adafruit_Thermal::hasPaper() {
   
 }
 
-void Adafruit_Thermal::setLineHeight(int val) {
+void Adafruit_Thermal_Galileo::setLineHeight(int val) {
   if(val < 24) val = 24;
   lineSpacing = val - 24;
 
@@ -539,15 +532,10 @@ void Adafruit_Thermal::setLineHeight(int val) {
 }
 
 ////////////////////// not working?
-void Adafruit_Thermal::tab() {
+void Adafruit_Thermal_Galileo::tab() {
   PRINTER_PRINT(9);
 }
-void Adafruit_Thermal::setCharSpacing(int spacing) {
+void Adafruit_Thermal_Galileo::setCharSpacing(int spacing) {
   writeBytes(27, 32, 0, 10);
 }
 /////////////////////////
-
-#if ARDUINO < 100
-void *operator new(size_t size_) { return malloc(size_); }
-void* operator new(size_t size_,void *ptr_) { return ptr_; }
-#endif

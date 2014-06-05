@@ -11,24 +11,16 @@
   MIT license, all text above must be included in any redistribution.
  *************************************************************************/
 
-// If you're using Arduino 1.0 uncomment the next line:
-#include "SoftwareSerial.h"
-// If you're using Arduino 23 or earlier, uncomment the next line:
-//#include "NewSoftSerial.h"
-
-#include "Adafruit_Thermal.h"
+#include "Adafruit_Thermal_Galileo.h"
 #include "adalogo.h"
 #include "adaqrcode.h"
-#include <avr/pgmspace.h>
 
-int printer_RX_Pin = 5;  // This is the green wire
-int printer_TX_Pin = 6;  // This is the yellow wire
+// RX (pin 0) = green wire
+// TX (pin 1) = yellow wire
 
-Adafruit_Thermal printer(printer_RX_Pin, printer_TX_Pin);
+Adafruit_Thermal_Galileo printer;
 
 void setup(){
-  Serial.begin(9600);
-  pinMode(7, OUTPUT); digitalWrite(7, LOW); // To also work w/IoTP printer
   printer.begin();
 
   // The following function calls are in setup(), but do not need to be.

@@ -14,14 +14,7 @@
 #ifndef Thermal_h
 #define Thermal_h
 
-#if ARDUINO >= 100
- #include "Arduino.h"
- #include "SoftwareSerial.h"
-#else
- #include "WProgram.h"
- #include "WConstants.h"
- #include "NewSoftSerial.h"
-#endif
+#include "Arduino.h"
 
 // Barcode types
 #define UPC_A   0
@@ -36,22 +29,13 @@
 #define CODE11  9
 #define MSI    10
 
-#if ARDUINO >= 100
-  #define SERIAL_IMPL      SoftwareSerial
-  #define PRINTER_PRINT(a) _printer->write(a);
-#else
-  #define SERIAL_IMPL      NewSoftSerial
-  #define PRINTER_PRINT(a) _printer->print(a, BYTE);
-#endif
+#define PRINTER_PRINT(a) Serial1.write(a);
 
-class Adafruit_Thermal : public Print {
+class Adafruit_Thermal_Galileo : public Print {
 
  public:
-
-  Adafruit_Thermal(int RX_Pin, int TX_Pin);
-
   void
-    begin(int heatTime=200),
+    begin(int heatTime = 200),
     reset(),
     setDefault(),
     test(),
@@ -103,16 +87,10 @@ class Adafruit_Thermal : public Print {
 
   bool hasPaper();
 
-#if ARDUINO >= 100
   size_t write(uint8_t c);
-#else
-  void   write(uint8_t c);
-#endif
 
  protected:
 
-  SERIAL_IMPL
-    *_printer;
   uint8_t
     prevByte,      // Last character issued to printer
     column,        // Last horizontal column printed
@@ -125,9 +103,7 @@ class Adafruit_Thermal : public Print {
     dotPrintTime,  // Time to print a single dot line, in microseconds
     dotFeedTime;   // Time to feed a single dot line, in microseconds
   int
-    printMode,
-    _RX_Pin,
-    _TX_Pin;
+    printMode;
   void
     setPrintMode(uint8_t mask),
     unsetPrintMode(uint8_t mask),
